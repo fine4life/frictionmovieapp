@@ -68,3 +68,44 @@ jobs:
           tags: ghcr.io/fine4life/frictionmovieapp:${{ github.sha }}
           labels: |
             org.opencontainers.image.source=https://github.com/fine4life/frictionmovieapp
+
+  deploy:
+    name: Deploy to Minikube
+    needs: publish-image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/feature/setup-frictionmovieapp'
+    runs-on: [self-hosted, Linux, X64, frictionmovieapp-minikube]
+
+    permissions:
+      contents: read
+
+    concurrency:
+      group: frictionmovieapp-minikube
+      cancel-in-progress: false
+
+    env:
+      KUBECONFIG: /home/sylver/.kube/config
+      IMAGE: ghcr.io/fine4life/frictionmovieapp:${{ github.sha }}
+
+    steps:
+      - name: Download repository code
+        uses: actions/checkout@v6
+
+      - name: Check cluster connection
+        run: kubectl --context=minikube get nodes
+
+      - name: Apply Deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed "s|FRICTIONMOVIEAPP_IMAGE|$IMAGE|g" k8s/deployment.yml |
+            kubectl --context=minikube apply -n frictionmovieapp -f -
+
+      - name: Apply Service
+        run: kubectl --context=minikube apply -n frictionmovieapp -f k8s/service.yml
+
+      - name: Wait for deployment
+        run: |
+          kubectl --context=minikube rollout status \
+            deployment/frictionmovieapp \
+            -n frictionmovieapp \
+            --timeout=180s

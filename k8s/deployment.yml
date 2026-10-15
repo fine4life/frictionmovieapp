@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frictionmovieapp
+  namespace: frictionmovieapp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: frictionmovieapp
+  template:
+    metadata:
+      labels:
+        app: frictionmovieapp
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: frictionmovieapp
+          image: FRICTIONMOVIEAPP_IMAGE
+          ports:
+            - containerPort: 3030
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3030
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3030
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
