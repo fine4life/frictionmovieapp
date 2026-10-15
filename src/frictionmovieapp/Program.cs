@@ -7,7 +7,7 @@ var app = builder.Build();
 app.MapGet("/", () => Results.Ok(new
 {
     application = "frictionmovieapp",
-    message = "frictionmovieapp is running!"
+    message = "frictionmovieapp is streaming fine!"
 }));
 
 app.MapHealthChecks("/health");
